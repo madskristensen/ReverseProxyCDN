@@ -20,6 +20,12 @@
             p span {
                 font-weight: normal;
             }
+
+        a{
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
     </style>
     <script>
         var host = location.host;
@@ -33,6 +39,10 @@
 
     <h1>Reverse Proxy CDN</h1>
     <p>Location: <span><%= ConfigurationManager.AppSettings.Get("location") %></span></p>
+
+    <a href="https://github.com/madskristensen/ReverseProxyCDN/">
+        <img src="http://schemastore.org/img/forkme.png" alt="Fork me on GitHub" />
+    </a>
 
 </body>
 </html>
