@@ -63,7 +63,6 @@ public class MissingFileModule : IHttpModule
 
             SaveFile(file, ref buffer);
 
-            // TODO: Send all the response headers from source
             context.Response.BinaryWrite(buffer);
             context.Response.ContentType = client.ResponseHeaders["content-type"];
             context.Response.StatusCode = 200;
