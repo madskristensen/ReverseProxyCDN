@@ -5,8 +5,8 @@ _A simple ASP.NET reverse proxy website that anyone can use._
 This project aims to create a very simple mechanism for serving
 static files from a separate domain than the main website.
 
-The Reverse Proxy site can then easily be deployed to CDN's or 
-to Azure using the Traffic Manager to distribute the files globally.
+The Reverse Proxy site can then easily be deployed to any web server or 
+to Azure and then use the Traffic Manager to distribute the files globally.
 
 There are several reasons why it's a good idea to serve static files 
 from separate domains (or subdomains).
