@@ -24,7 +24,7 @@
     <script>
         var host = location.host;
 
-        if (host.indexOf("localhosts") !== 0 && host.indexOf("1.m82.be") !== 0) {
+        if (host.indexOf("m82.be") === 0) {
             location.href = "http://1.m82.be";
         }
     </script>
