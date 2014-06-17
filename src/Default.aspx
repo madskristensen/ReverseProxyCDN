@@ -5,8 +5,8 @@
 
     protected override void OnLoad(EventArgs e)
     {
-        if (!Request.IsLocal && !Request.Url.Authority.StartsWith("m82.be"))
-            Response.Redirect("http://1.m82.be/", true);
+        //if (!Request.IsLocal && !Request.Url.Authority.StartsWith("m82.be"))
+        //    Response.Redirect("http://1.m82.be/", true);
     }
 
 </script>
@@ -36,6 +36,6 @@
 
     <h1>Reverse Proxy CDN</h1>
     <p>Location: <span><%= ConfigurationManager.AppSettings.Get("location") %></span></p>
-
+    <%=Request.Url.Authority %>
 </body>
 </html>
