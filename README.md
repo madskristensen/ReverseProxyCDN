@@ -36,3 +36,7 @@ to `foo.com` that looks like this: `http://foo.com/bar.com/images/logo.png`.
 Notice that the domain `bar.com` is the first path segment in the URL to 
 the Reverse Proxy website. That informs the Reverse Proxy how to resolve
 the actual image located on `bar.com`.
+
+As of recently, [MiniBlog](https://github.com/madskristensen/miniblog/) 
+has native support for reverse proxy file serving and is fully compatible
+with this Reverse Proxy.
