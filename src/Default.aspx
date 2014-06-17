@@ -16,15 +16,15 @@
             font-weight: bold;
         }
 
-        p span{
-            font-weight: normal;
-        }
+            p span {
+                font-weight: normal;
+            }
     </style>
 </head>
 <body>
-    
-    <h1>Reverse Proxy CDN</h1>
 
+    <h1>Reverse Proxy CDN</h1>
+    
     <p>Location: <span><%= ConfigurationManager.AppSettings.Get("location") %></span></p>
 </body>
 </html>
