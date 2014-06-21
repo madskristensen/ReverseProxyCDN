@@ -14,6 +14,13 @@ public class MissingFileModule : IHttpModule
     {
         var asyncHelper = new EventHandlerTaskAsyncHelper(OnEndRequestAsync);
         context.AddOnEndRequestAsync(asyncHelper.BeginEventHandler, asyncHelper.EndEventHandler);
+        context.PreSendRequestHeaders += context_PreSendRequestHeaders;
+    }
+
+    void context_PreSendRequestHeaders(object sender, EventArgs e)
+    {
+        HttpApplication application = (HttpApplication)sender;
+        application.Context.Response.Headers.Remove("Server");
     }
 
     private async Task OnEndRequestAsync(object sender, EventArgs e)
