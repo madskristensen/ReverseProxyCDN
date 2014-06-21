@@ -28,8 +28,9 @@ public class MissingFileModule : IHttpModule
         if (context.Response.StatusCode == 404)
         {
             string filePath = context.Request.FilePath;
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
 
-            if (!_extensions.Contains(Path.GetExtension(filePath)))
+            if (!_extensions.Contains(ext))
                 throw new HttpException(403, "File extension not supported");
 
             Uri url = GetRemoteUrl(context, filePath);
