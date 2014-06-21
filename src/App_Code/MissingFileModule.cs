@@ -3,6 +3,7 @@ using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using System.Web;
 
 public class MissingFileModule : IHttpModule
@@ -11,18 +12,19 @@ public class MissingFileModule : IHttpModule
 
     public void Init(HttpApplication context)
     {
-        context.PreSendRequestContent += PreSendRequestContent;
+        var asyncHelper = new EventHandlerTaskAsyncHelper(OnEndRequestAsync);
+        context.AddOnEndRequestAsync(asyncHelper.BeginEventHandler, asyncHelper.EndEventHandler);
     }
 
-    private void PreSendRequestContent(object sender, EventArgs e)
+    private async Task OnEndRequestAsync(object sender, EventArgs e)
     {
         HttpApplication application = (HttpApplication)sender;
-        
+
         if (application == null)
             return;
 
         HttpContext context = application.Context;
-    
+
         if (context.Response.StatusCode == 404)
         {
             string filePath = context.Request.FilePath;
@@ -31,7 +33,7 @@ public class MissingFileModule : IHttpModule
                 throw new HttpException(403, "File extension not supported");
 
             Uri url = GetRemoteUrl(context, filePath);
-            DownloadAndServeFile(context, filePath, url);
+            await DownloadAndServeFile(context, filePath, url);
         }
     }
 
@@ -52,16 +54,16 @@ public class MissingFileModule : IHttpModule
         return url;
     }
 
-    private void DownloadAndServeFile(HttpContext context, string local, Uri remote)
+    private async Task DownloadAndServeFile(HttpContext context, string local, Uri remote)
     {
         FileInfo file = new FileInfo(context.Server.MapPath(local));
 
         using (WebClient client = new WebClient())
         {
             client.Headers.Add("User-Agent", "Reverse Proxy 1.0 (http://m82.be)");
-            byte[] buffer = client.DownloadData(remote);
+            byte[] buffer = await client.DownloadDataTaskAsync(remote);
 
-            SaveFile(file, ref buffer);
+            await SaveFile(file, buffer);
 
             context.Response.BinaryWrite(buffer);
             context.Response.ContentType = client.ResponseHeaders["content-type"];
@@ -69,10 +71,15 @@ public class MissingFileModule : IHttpModule
         }
     }
 
-    private void SaveFile(FileInfo file, ref byte[] buffer)
+    private async Task SaveFile(FileInfo file, byte[] buffer)
     {
         file.Directory.Create();
         File.WriteAllBytes(file.FullName, buffer);
+
+        using (FileStream sourceStream = new FileStream(file.FullName, FileMode.Truncate, FileAccess.Write, FileShare.None, 4096, true))
+        {
+            await sourceStream.WriteAsync(buffer, 0, buffer.Length);
+        }
     }
 
     public void Dispose()
