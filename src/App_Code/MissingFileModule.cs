@@ -82,11 +82,10 @@ public class MissingFileModule : IHttpModule
     private async Task SaveFile(FileInfo file, byte[] buffer)
     {
         file.Directory.Create();
-        File.WriteAllBytes(file.FullName, buffer);
 
-        using (FileStream sourceStream = new FileStream(file.FullName, FileMode.Truncate, FileAccess.Write, FileShare.None, 4096, true))
+        using (FileStream fileStream = new FileStream(file.FullName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None, 4096, true))
         {
-            await sourceStream.WriteAsync(buffer, 0, buffer.Length);
+            await fileStream.WriteAsync(buffer, 0, buffer.Length);
         }
     }
 
