@@ -65,17 +65,24 @@ public class MissingFileModule : IHttpModule
     private async Task DownloadAndServeFile(HttpContext context, string local, Uri remote)
     {
         FileInfo file = new FileInfo(context.Server.MapPath(local));
-
-        using (WebClient client = new WebClient())
+        try
         {
-            client.Headers.Add("User-Agent", "Reverse Proxy 1.0 (http://m82.be)");
-            byte[] buffer = await client.DownloadDataTaskAsync(remote);
+            using (WebClient client = new WebClient())
+            {
+                client.Headers.Add("User-Agent", "Reverse Proxy 1.0 (http://m82.be)");
+                byte[] buffer = await client.DownloadDataTaskAsync(remote);
+                
+                await SaveFile(file, buffer);
 
-            await SaveFile(file, buffer);
-
-            context.Response.BinaryWrite(buffer);
-            context.Response.ContentType = client.ResponseHeaders["content-type"];
-            context.Response.StatusCode = 200;
+                context.Response.BinaryWrite(buffer);
+                context.Response.ContentType = client.ResponseHeaders["content-type"];
+                context.Response.StatusCode = 200;
+            }
+        }
+        catch (WebException exception)
+        {
+            var response = exception.Response as HttpWebResponse;
+            throw new HttpException((int)response.StatusCode, exception.Message);
         }
     }
 
