@@ -52,7 +52,7 @@ public class MissingFileModule : IHttpModule
         if (end == -1)
             throw new HttpException(404, "File not found");
 
-        string domain = filePath.Substring(1, end);
+        string domain = filePath.Substring(1, end).Replace("-", ".");
         string path = filePath.Substring(end + 1);
         Uri url;
 
