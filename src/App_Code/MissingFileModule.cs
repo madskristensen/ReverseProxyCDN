@@ -71,7 +71,7 @@ public class MissingFileModule : IHttpModule
             {
                 client.Headers.Add("User-Agent", "Reverse Proxy 1.0 (http://m82.be)");
                 byte[] buffer = await client.DownloadDataTaskAsync(remote);
-                
+
                 await SaveFile(file, buffer);
 
                 context.Response.BinaryWrite(buffer);
