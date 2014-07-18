@@ -9,12 +9,13 @@ using System.Web;
 public class MissingFileModule : IHttpModule
 {
     private static readonly string[] _extensions = ConfigurationManager.AppSettings.Get("extensions").Split(' ');
+    private string _domain, _path;
 
-    public void Init(HttpApplication context)
+    public void Init(HttpApplication app)
     {
         var asyncHelper = new EventHandlerTaskAsyncHelper(OnEndRequestAsync);
-        context.AddOnEndRequestAsync(asyncHelper.BeginEventHandler, asyncHelper.EndEventHandler);
-        context.PreSendRequestHeaders += context_PreSendRequestHeaders;
+        app.AddOnEndRequestAsync(asyncHelper.BeginEventHandler, asyncHelper.EndEventHandler);
+        app.PreSendRequestHeaders += context_PreSendRequestHeaders;
     }
 
     void context_PreSendRequestHeaders(object sender, EventArgs e)
@@ -25,53 +26,62 @@ public class MissingFileModule : IHttpModule
 
     private async Task OnEndRequestAsync(object sender, EventArgs e)
     {
-        HttpApplication application = (HttpApplication)sender;
-
-        if (application == null)
-            return;
-
-        HttpContext context = application.Context;
+        HttpContext context = ((HttpApplication)sender).Context;
 
         if (context.Response.StatusCode == 404)
         {
-            string filePath = context.Request.FilePath;
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            GetDomainAndPath(context);
+            ValidateCaller();
+            ValidateFile();
 
-            if (!_extensions.Contains(ext))
-                throw new HttpException(403, "File extension not supported");
+            Uri url = GetRemoteUrl(context);
 
-            Uri url = GetRemoteUrl(context, filePath);
-            await DownloadAndServeFile(context, filePath, url);
+            await DownloadAndServeFile(context, url);
         }
     }
 
-    private static Uri GetRemoteUrl(HttpContext context, string filePath)
+    private void GetDomainAndPath(HttpContext context)
     {
+        string filePath = context.Request.FilePath;
         int end = filePath.IndexOf("/", 1, StringComparison.Ordinal) - 1;
 
-        if (end == -1)
-            throw new HttpException(404, "File not found");
+        _domain = filePath.Substring(1, end);
+        _path = filePath.Substring(end + 1);
+    }
 
-        string domain = filePath.Substring(1, end).Replace("-", ".");
-        string path = filePath.Substring(end + 1);
+    private void ValidateCaller()
+    {
+        if (!"true".Equals(ConfigurationManager.AppSettings.Get(_domain), StringComparison.OrdinalIgnoreCase))
+            throw new HttpException(401, "Unauthorized");
+    }
+
+    private void ValidateFile()
+    {
+        string ext = Path.GetExtension(_path).ToLowerInvariant();
+
+        if (!_extensions.Contains(ext))
+            throw new HttpException(403, "File extension not supported");
+    }
+
+    private Uri GetRemoteUrl(HttpContext context)
+    {
         Uri url;
 
-        if (!Uri.TryCreate(context.Request.Url.Scheme + "://" + domain + path, UriKind.Absolute, out url))
+        if (!Uri.TryCreate(context.Request.Url.Scheme + "://" + _domain + _path, UriKind.Absolute, out url))
             throw new HttpException(406, "Not accepted");
 
         return url;
     }
 
-    private async Task DownloadAndServeFile(HttpContext context, string local, Uri remote)
+    private async Task DownloadAndServeFile(HttpContext context, Uri remote)
     {
-        FileInfo file = new FileInfo(context.Server.MapPath(local));
+        FileInfo file = new FileInfo(context.Server.MapPath("~/" + _domain + _path));
         try
         {
             using (WebClient client = new WebClient())
             {
                 client.Headers.Add("User-Agent", "Reverse Proxy 1.0 (http://m82.be)");
                 byte[] buffer = await client.DownloadDataTaskAsync(remote);
-
                 await SaveFile(file, buffer);
 
                 context.Response.BinaryWrite(buffer);
