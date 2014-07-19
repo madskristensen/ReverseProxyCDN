@@ -9,7 +9,7 @@ using System.Web;
 public class MissingFileModule : IHttpModule
 {
     private static readonly string[] _extensions = ConfigurationManager.AppSettings.Get("extensions").Split(' ');
-    private string _domain, _path;
+    private string _domain, _port, _path;
 
     public void Init(HttpApplication app)
     {
@@ -45,13 +45,18 @@ public class MissingFileModule : IHttpModule
         string filePath = context.Request.FilePath;
         int end = filePath.IndexOf("/", 1, StringComparison.Ordinal) - 1;
 
-        _domain = filePath.Substring(1, end);
+        int portIndex = filePath.IndexOf(':');
+
+        _domain = portIndex > -1 ? filePath.Substring(1, portIndex - 1) : filePath.Substring(1, end);
+        _port = portIndex > -1 ? filePath.Substring(portIndex + 1, end - portIndex) : "80";
         _path = filePath.Substring(end + 1);
     }
 
     private void ValidateCaller()
     {
-        if (!"true".Equals(ConfigurationManager.AppSettings.Get(_domain), StringComparison.OrdinalIgnoreCase))
+        string domain = _domain.Replace(":" + _port, "");
+
+        if (!"true".Equals(ConfigurationManager.AppSettings.Get(domain), StringComparison.OrdinalIgnoreCase))
             throw new HttpException(401, "Unauthorized");
     }
 
@@ -67,8 +72,9 @@ public class MissingFileModule : IHttpModule
     {
         Uri url;
 
-        if (!Uri.TryCreate(context.Request.Url.Scheme + "://" + _domain + _path, UriKind.Absolute, out url))
-            throw new HttpException(406, "Not accepted");
+
+        if (!Uri.TryCreate(context.Request.Url.Scheme + "://" + _domain + ":" + _port + _path, UriKind.Absolute, out url))
+            throw new HttpException(406, "Requesting URL was not formatted correctly");
 
         return url;
     }
@@ -76,6 +82,7 @@ public class MissingFileModule : IHttpModule
     private async Task DownloadAndServeFile(HttpContext context, Uri remote)
     {
         FileInfo file = new FileInfo(context.Server.MapPath("~/" + _domain + _path));
+
         try
         {
             using (WebClient client = new WebClient())
