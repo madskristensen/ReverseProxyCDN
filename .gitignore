@@ -1,5 +1,6 @@
 
 *.pubxml
+.vs
 *.publishproj
 
 

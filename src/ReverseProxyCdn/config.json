@@ -1,0 +1,4 @@
+﻿{
+  "extensions": ".png, .jpg, .jpeg, .gif, .ico, .svg, .json, .js, .css, .woff, .eot, .ttf, .html, .htm, .json, .yml",
+  "domains": "localhost, madskristensen.net, schemastore.org, google-analytics.com, about.tommyparnell.com, lastdrink.tommyparnell.com "
+}
